@@ -8,6 +8,7 @@ from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 # from django.utils.translation import ugettext_lazy as _
 
 
+# https://gumdrop.tistory.com/23
 class UserManager(BaseUserManager):
     def _create_user(self, username, email, password, **extra_fields):
         if not username:
@@ -87,8 +88,8 @@ class User(AbstractBaseUser):
         return self.username
 
 
-def upload_to_func_driver_car_driverlisence(instance, filename):
-    return "/".join(['driver_car_driverlisence',upload_to_func_common(instance, filename)])
+def upload_to_func_driver_car_driverlicense(instance, filename):
+    return "/".join(['driver_car_driverlicense',upload_to_func_common(instance, filename)])
 def upload_to_func_driver_car_photo(instance, filename):
     return "/".join(['driver_car_photo',upload_to_func_common(instance, filename)])
 def upload_to_func_driver_profile_tradeunion_certificate(instance, filename):
@@ -102,7 +103,7 @@ class DriverAcc(models.Model):
     # name = models.CharField(max_length=16)
     # num = models.CharField(max_length=12, unique=True)
     driver_com_name = models.CharField(max_length=32)
-    driver_car_driverlisence = models.ImageField(upload_to=upload_to_func_driver_car_driverlisence)
+    driver_car_driverlicense = models.ImageField(upload_to=upload_to_func_driver_car_driverlicense)
     # Profile section below
     driver_car_option = models.CharField(max_length=128, null=True, blank=True)
     driver_car_num = models.CharField(max_length=10, null=True, blank=True)

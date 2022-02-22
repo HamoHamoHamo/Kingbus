@@ -4,14 +4,14 @@ from user.models import User
 
 class Dispatch(models.Model):
     #FK
-    order = models.OneToOneField('Dispatch_order', on_delete=models.CASCADE,primary_key=True)
-    selected_estimate = models.OneToOneField('Dispatch_estimate', on_delete=models.CASCADE, blank=True, null=True)
-    regularly = models.OneToOneField('Regularly_order', on_delete=models.CASCADE, blank=True, null=True) #셔틀 DB는 추후 반영
+    order = models.OneToOneField('DispatchOrder', on_delete=models.CASCADE,primary_key=True)
+    selected_estimate = models.OneToOneField('DispatchEstimate', on_delete=models.CASCADE, blank=True, null=True)
+    regularly = models.OneToOneField('RegularlyOrder', on_delete=models.CASCADE, blank=True, null=True) #셔틀 DB는 추후 반영
     user = models.ForeignKey(User, on_delete=models.CASCADE)
 
     order_time = models.DateTimeField(auto_now_add=True)#주문 신청 시간
-    estimate_confirmed_time = models.DateTimeField(blank=True, null=True)#견적 확정 시간
     estimate_order_time = models.DateTimeField(blank=True, null=True)#견적 신청 시간
+    estimate_confirmed_time = models.DateTimeField(blank=True, null=True)#견적 확정 시간
     reservation_confirmed = models.BooleanField(default=False)#예약 확정 여부
 
     class Meta:
@@ -20,7 +20,7 @@ class Dispatch(models.Model):
     #     return str(self.dispatch)
 
 
-class Dispatch_order(models.Model):
+class DispatchOrder(models.Model):
     #왕복(lt), 편도(st), 셔틀(ro)?
     way = models.CharField(max_length=2)
     purpose = models.CharField(max_length=100)
@@ -49,7 +49,7 @@ class Dispatch_order(models.Model):
 
 
 #셔틀 DB는 추후 반영
-class Regularly_order(models.Model):
+class RegularlyOrder(models.Model):
     week = models.CharField(max_length=1)
     term_begin = models.DateField()
     term_end = models.DateField()
@@ -61,14 +61,14 @@ class Regularly_order(models.Model):
 
 
 
-class Dispatch_estimate(models.Model):
+class DispatchEstimate(models.Model):
     #FK
-    order = models.ForeignKey(Dispatch_order, on_delete=models.CASCADE)
-    driverorcompany = models.OneToOneField(User, on_delete=models.CASCADE)
+    order = models.ForeignKey(DispatchOrder, on_delete=models.CASCADE)
+    driverorcompany = models.ForeignKey(User, on_delete=models.CASCADE)
 
-    price = models.CharField(max_length=10, blank=True)
-    bus_cnt = models.CharField(max_length=5, blank=True)
-    bus_type = models.CharField(max_length=64, blank=True)
+    price = models.CharField(max_length=10)
+    bus_cnt = models.CharField(max_length=5)
+    bus_type = models.CharField(max_length=64)
 
     is_toll_gate = models.BooleanField(default=False)
     is_parking = models.BooleanField(default=False)

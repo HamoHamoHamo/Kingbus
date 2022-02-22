@@ -9,9 +9,7 @@ class Community_profile(models.Model):
     nickname = models.CharField(max_length=32,unique=True)
     #FK
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    driver = models.ForeignKey(DriverAcc, on_delete=models.CASCADE)
-    company = models.ForeignKey(CompanyAcc, on_delete=models.CASCADE)
-
+    
     def __str__(self) -> str:
         return self.nickname
 

@@ -183,7 +183,7 @@ SIMPLE_JWT = {
     'ALGORITHM': 'HS256',
     'SIGNING_KEY': get_secret("SIMPLEJWT_SECRETKEY"),
     'VERIFYING_KEY': None,
-    'AUTH_HEADER_TYPES': ('JWT',),
+    'AUTH_HEADER_TYPES': ('Bearer',),
     # 'AUTH_HEADER_TYPES': ('Authorization',),
     'USER_ID_FIELD': 'username',
     'USER_ID_CLAIM': 'username',

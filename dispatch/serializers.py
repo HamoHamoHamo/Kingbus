@@ -1,39 +1,59 @@
-import dispatch
-from .models import Dispatch, Dispatch_order, User
+from django.contrib.auth import authenticate
+from .models import Dispatch, DispatchEstimate, DispatchOrder, User
 from rest_framework import serializers
 
 class DispatchOrderSerializer(serializers.ModelSerializer):
     #왕복(lt), 편도(st), 셔틀(ro)?
-    # way = serializers.CharField(max_length=2)
-    # purpose = serializers.CharField(max_length=100)
-    # reference = serializers.CharField(required=False)
-    # departure = serializers.CharField(max_length=255)
-    # arrival = serializers.CharField(max_length=255)
-    # stopover = serializers.CharField(required=False)
-    # departure_date = serializers.DateField()
-    # departure_time = serializers.TimeField()
-    # arrival_date = serializers.DateField(required=False)
-    # arrival_time = serializers.TimeField(required=False)
-    # is_driver = serializers.BooleanField(default=False)
-    # total_number = serializers.CharField(max_length=10)
-    # convenience = serializers.CharField(required=False)
     class Meta:
-        model = Dispatch_order
+        model = DispatchOrder
         fields = '__all__'
 
-    # get id(pk) of User from token payload
-    user_id = serializers.CharField()
-    
+    # get id(pk) of User from token payload?
+    # username = serializers.CharField()
+
     def validate(self, attrs):
         return super().validate(attrs)
     def create(self, validated_data):
-        user_id=validated_data['user_id']
-        del validated_data['user_id']
-        orders = Dispatch_order.objects.create(**validated_data)
+        user=self.context['requestuser']
+        orders = DispatchOrder.objects.create(**validated_data)
         dispatch = Dispatch.objects.create(
             order = orders,
-            user = User.objects.get(id=user_id)
+            user = user
         )
         return orders, dispatch
     def update(self, instance, validated_data):
         return super().update(instance, validated_data)
+
+
+# class DispatchOrderDetailSerializer(serializers.Serializer):
+
+    
+class DispatchEstimateSerializer(serializers.Serializer):
+    # class Meta:
+    #     model = DispatchEstimate
+    #     #fields = '__all__'
+    #     exclude = ['driverorcompany']
+    order = serializers.CharField()
+
+    price = serializers.CharField(max_length=10)
+    bus_cnt = serializers.CharField(max_length=5)
+    bus_type = serializers.CharField(max_length=64)
+
+    is_toll_gate = serializers.BooleanField(default=False)
+    is_parking = serializers.BooleanField(default=False)
+    is_accomodation = serializers.BooleanField(default=False)
+    is_meal = serializers.BooleanField(default=False)
+    is_convenience = serializers.BooleanField(default=False)
+
+    def validate(self, attrs): 
+        return super().validate(attrs)
+    def create(self, validated_data):
+        validated_data['order'] = DispatchOrder.objects.get(id=validated_data['order'])
+        validated_data['driverorcompany'] = self.context['requestuser']
+        estimate = DispatchEstimate.objects.create(**validated_data)
+        return estimate
+    def update(self, instance, validated_data):
+        validated_data['order'] = instance.order
+        validated_data['driverorcompany'] = instance.driverorcompany
+        estimate = DispatchEstimate.objects.create(**validated_data)
+        return estimate

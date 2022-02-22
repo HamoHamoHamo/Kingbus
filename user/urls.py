@@ -9,9 +9,9 @@ from . import views
 
 urlpatterns = [
     # path('api/', include(routers.urls)),
-    path('users/register/', views.createUser),
-    path('drivers/register/', views.DriverAccRegisterView.as_view()),
-    path('companys/register/', views.CompanyAccRegisterView.as_view()),
+    path('register/user/', views.createUser),
+    path('register/driver/', views.DriverAccRegisterView.as_view()),
+    path('register/company/', views.CompanyAccRegisterView.as_view()),
     path('login/', views.UserLoginView.as_view()),
     # path('drivers/login/', views.DriverLoginView.as_view()),
     # path('companys/login/', views.CompanyLoginView.as_view()),

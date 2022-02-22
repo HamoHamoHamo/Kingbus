@@ -1,9 +1,8 @@
-from distutils.command.config import config
-import jwt
+# from django.contrib.auth import authenticate
 from rest_framework import serializers
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from kingbus.settings import SIMPLE_JWT
+# from django.conf import settings
 from .models import User, DriverAcc, CompanyAcc
 
 
@@ -21,8 +20,12 @@ class UserLoginSerializer(serializers.Serializer):
         #     try:user = User.objects.get(email=data['username'])
         #     finally:pass
         # else:
+
         try:
             user = User.objects.get(username=data['username'])
+        # user = authenticate(**data)
+            print(user)
+        # if user is None:
         except:
             raise serializers.ValidationError("Invalid login credentials")
         # if data['role'] is None:
@@ -33,11 +36,11 @@ class UserLoginSerializer(serializers.Serializer):
             raise serializers.ValidationError("Invalid login credentials4")
         if not user.check_password(data['password']):
             raise serializers.ValidationError("Invalid password")
-
+        # TODO https://eunjin3786.tistory.com/271
     
         refresh = RefreshToken.for_user(user)
         refresh_token = str(refresh)
-        refresh['id'] = user.id
+        # refresh['id'] = user.id
         access_token = str(refresh.access_token)
         
 
@@ -105,7 +108,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         model = User
         fields = ('username', 'password', 'email', 'name' , 'num')
         extra_kwargs = {"password": {"write_only": True}}
-    def validate(self, data):
+    def validate(self, data):# TODO merge functions
         if len(str(data['username'])) < 8:
             raise serializers.ValidationError("ID가 너무 짧습니다.")
         if len(str(data['password'])) < 4:
@@ -114,26 +117,19 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("전화번호가 너무 짧습니다.")
         return data
     def create(self, validated_data):
-        user = User.objects.create_user(
-            username=validated_data['username'],
-            email=validated_data['email'],
-            password=validated_data['password'],
-            name=validated_data['name'],
-            num=validated_data['num'],
-            role='u',
-            is_active=True,
-        )
+        validated_data['role']='u'
+        validated_data['is_active']=True
+        user = User.objects.create_user(**validated_data)
         return user
 
 
-class DriverRegistrationSerializer(serializers.Serializer):
-    username = serializers.CharField(max_length=32)
-    password = serializers.CharField(max_length=128, write_only=True)
-    email = serializers.EmailField(max_length=255)
-    name = serializers.CharField(max_length=16)
-    num = serializers.CharField(max_length=12)
+class DriverRegistrationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ('username', 'password', 'email', 'name' , 'num', 'driver_com_name', 'driver_car_driverlicense')
+        extra_kwargs = {"password": {"write_only": True}}
     driver_com_name = serializers.CharField(max_length=32)
-    driver_car_driverlisence = serializers.ImageField()
+    driver_car_driverlicense = serializers.ImageField()
     def validate(self, data):
         if len(str(data['username'])) < 8:
             raise serializers.ValidationError("ID가 너무 짧습니다.")
@@ -143,28 +139,21 @@ class DriverRegistrationSerializer(serializers.Serializer):
             raise serializers.ValidationError("전화번호가 너무 짧습니다.")
         return data
     def create(self, validated_data):
-        user = User.objects.create_user(
-            username=validated_data['username'],
-            email=validated_data['email'],
-            password=validated_data['password'],
-            name=validated_data['name'],
-            num=validated_data['num'],
-            role='d',
-        )
+        validated_data['role']='d'
+        user = User.objects.create_user(**validated_data)
         driver = DriverAcc.objects.create(
             user = user,
             driver_com_name=validated_data['driver_com_name'],
-            driver_car_driverlisence=validated_data['driver_car_driverlisence'],
+            driver_car_driverlicense=validated_data['driver_car_driverlicense'],
         )
         return user, driver
 
 
-class CompanyRegistrationSerializer(serializers.Serializer):
-    username = serializers.CharField(max_length=32)
-    password = serializers.CharField(max_length=128, write_only=True)
-    email = serializers.EmailField(max_length=255)
-    name = serializers.CharField(max_length=16)
-    num = serializers.CharField(max_length=12)
+class CompanyRegistrationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ('username', 'password', 'email', 'name' , 'num', 'company_com_name', 'company_business_registration')
+        extra_kwargs = {"password": {"write_only": True}}
     company_com_name = serializers.CharField(max_length=32)
     company_business_registration = serializers.ImageField()
     def validate(self, data):
@@ -176,14 +165,8 @@ class CompanyRegistrationSerializer(serializers.Serializer):
             raise serializers.ValidationError("전화번호가 너무 짧습니다.")
         return data
     def create(self, validated_data):
-        user = User.objects.create_user(
-            username=validated_data['username'],
-            email=validated_data['email'],
-            password=validated_data['password'],
-            name=validated_data['name'],
-            num=validated_data['num'],
-            role='c',
-        )
+        validated_data['role']='c'
+        user = User.objects.create_user(**validated_data)
         company = CompanyAcc.objects.create(
             user = user,
             company_com_name=validated_data['company_com_name'],
