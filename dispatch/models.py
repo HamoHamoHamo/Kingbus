@@ -1,11 +1,28 @@
 from django.db import models
-from user.models import CompanyAcc, DriverAcc, User
+from user.models import User
 
-# Create your models here.
 
 class Dispatch(models.Model):
-    #왕복(lt), 편도(st)
-    way = models.CharField(max_length=2, blank=True)
+    #FK
+    order = models.OneToOneField('Dispatch_order', on_delete=models.CASCADE,primary_key=True)
+    selected_estimate = models.OneToOneField('Dispatch_estimate', on_delete=models.CASCADE, blank=True, null=True)
+    regularly = models.OneToOneField('Regularly_order', on_delete=models.CASCADE, blank=True, null=True) #셔틀 DB는 추후 반영
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+
+    order_time = models.DateTimeField(auto_now_add=True)#주문 신청 시간
+    estimate_confirmed_time = models.DateTimeField(blank=True, null=True)#견적 확정 시간
+    estimate_order_time = models.DateTimeField(blank=True, null=True)#견적 신청 시간
+    reservation_confirmed = models.BooleanField(default=False)#예약 확정 여부
+
+    class Meta:
+        db_table = 'kingbus_dispatch'
+    # def __str__(self) -> str:
+    #     return str(self.dispatch)
+
+
+class Dispatch_order(models.Model):
+    #왕복(lt), 편도(st), 셔틀(ro)?
+    way = models.CharField(max_length=2)
     purpose = models.CharField(max_length=100)
     reference = models.TextField(blank=True)
     departure = models.CharField(max_length=255)
@@ -13,60 +30,54 @@ class Dispatch(models.Model):
     stopover = models.TextField(blank=True)
     departure_date = models.DateField()
     departure_time = models.TimeField()
-    arrival_date = models.DateField(blank=True)
-    arrival_time = models.TimeField(blank=True)
+    arrival_date = models.DateField(blank=True, null=True)
+    arrival_time = models.TimeField(blank=True, null=True)
     is_driver = models.BooleanField(default=False)
     total_number = models.CharField(max_length=10)
-    convenience = models.TextField()
+    convenience = models.TextField(blank=True)
 
     # 견적 확정시 반영 부분
-    bus_type = models.CharField(max_length=30, blank=True)
-    price = models.CharField(max_length=10, blank=True)
-    bus_cnt = models.CharField(max_length=5, blank=True)
+    # price = models.CharField(max_length=10, blank=True)
+    # bus_cnt = models.CharField(max_length=5, blank=True)
+    # bus_type = models.CharField(max_length=30, blank=True)
 
-    def __str__(self) -> str:
-        return self.way
+    class Meta:
+        db_table = 'kingbus_dispatch_order'
+    # def __str__(self) -> str:
+    #     return self.way
+    
+
+
 #셔틀 DB는 추후 반영
 class Regularly_order(models.Model):
     week = models.CharField(max_length=1)
     term_begin = models.DateField()
     term_end = models.DateField()
     
-    def __str__(self) -> str:
-        return super().__str__()
+    class Meta:
+        db_table = 'kingbus_regulary_order'
+    # def __str__(self) -> str:
+    #     return super().__str__()
 
-class Estimate(models.Model):
+
+
+class Dispatch_estimate(models.Model):
+    #FK
+    order = models.ForeignKey(Dispatch_order, on_delete=models.CASCADE)
+    driverorcompany = models.OneToOneField(User, on_delete=models.CASCADE)
+
+    price = models.CharField(max_length=10, blank=True)
+    bus_cnt = models.CharField(max_length=5, blank=True)
+    bus_type = models.CharField(max_length=64, blank=True)
+
     is_toll_gate = models.BooleanField(default=False)
     is_parking = models.BooleanField(default=False)
     is_accomodation = models.BooleanField(default=False)
     is_meal = models.BooleanField(default=False)
     is_convenience = models.BooleanField(default=False)
 
-    price = models.CharField(max_length=10, blank=True)
-    bus_type = models.CharField(max_length=30, blank=True)
-    bus_cnt = models.CharField(max_length=5, blank=True)
-    #FK
-    order = models.ForeignKey(Dispatch, on_delete=models.CASCADE)
-    driver = models.ForeignKey(DriverAcc, on_delete=models.CASCADE)
-    company = models.ForeignKey(CompanyAcc, on_delete=models.CASCADE)
+    class Meta:
+        db_table = 'kingbus_estimate'
+    # def __str__(self) -> str:
+    #     return str(self.driverorcompany)
 
-    def __str__(self) -> str:
-        return self.order.way
-
-class Dispatch_order(models.Model):
-    #주문 신청 시간
-    order_time = models.TimeField()
-    #견적 확정 시간
-    estimate_confirmed_time = models.TimeField(blank=True)
-    #견적 신청 시간
-    estimate_order_time = models.TimeField(blank=True)
-    #예약 확정 여부
-    reservation_confirmed = models.BooleanField(default=False)
-    #FK
-    dispatch = models.ForeignKey(Dispatch, on_delete=models.CASCADE)
-    regularly = models.ForeignKey(Regularly_order, on_delete=models.CASCADE) #셔틀 DB는 추후 반영
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    selected_estimate = models.ForeignKey(Estimate, on_delete=models.CASCADE)
-
-    def __str__(self) -> str:
-        return self.user.userid

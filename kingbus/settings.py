@@ -43,9 +43,9 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['kingbus.co.kr','localhost']
 
+AUTH_USER_MODEL = "user.User"
 
 # Application definition
-
 INSTALLED_APPS = [
     # basic apps
     'django.contrib.admin',
@@ -58,10 +58,10 @@ INSTALLED_APPS = [
     'corsheaders',
     'rest_framework',
     # local apps
-    'main',
     'user',
+    'main',
+    'dispatch',
     # 'community',
-    # 'dispatch',
 ]
 
 MIDDLEWARE = [
@@ -109,11 +109,11 @@ DATABASES = {
     # } TODO ? : https://django-orm-cookbook-ko.readthedocs.io/en/latest/multiple_databases.html
     'default':{
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'kingbusdb',
-        'USER': 'kingbus',
-        'PASSWORD': 'kingbus',
-        'HOST': 'localhost',
-        'PORT': '',
+        'NAME': get_secret("DJANGO_DB_NAME"),
+        'USER': get_secret("DJANGO_DB_USER"),
+        'PASSWORD': get_secret("DJANGO_DB_PASSWORD"),
+        'HOST': get_secret("DJANGO_DB_HOST"),
+        'PORT': get_secret("DJANGO_DB_PORT"),
     }
 }
 
@@ -155,7 +155,7 @@ USE_TZ = True
 STATIC_URL = "/static/"
 STATIC_ROOT = os.path.join(BASE_DIR, "static")
 
-MEDIA_URL = "/"
+MEDIA_URL = "/media/"
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 
 # Default primary key field type
@@ -176,14 +176,15 @@ REST_FRAMEWORK = {
     ),
 }
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=30),
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=5),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=14),
     'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': False,
     'ALGORITHM': 'HS256',
-    'SIGNING_KEY': SECRET_KEY,
+    'SIGNING_KEY': get_secret("SIMPLEJWT_SECRETKEY"),
     'VERIFYING_KEY': None,
     'AUTH_HEADER_TYPES': ('JWT',),
+    # 'AUTH_HEADER_TYPES': ('Authorization',),
     'USER_ID_FIELD': 'username',
     'USER_ID_CLAIM': 'username',
     'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),

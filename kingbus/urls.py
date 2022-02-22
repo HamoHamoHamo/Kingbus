@@ -19,11 +19,13 @@ from django.urls import include, path
 # from .settings import DEBUG, MEDIA_URL, MEDIA_ROOT
 from main import urls as mainurls
 from user import urls as userurls
+from dispatch import urls as dispatchurls
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('user/', include(userurls)),
-    path('', include(mainurls)),
+    path('', include(userurls)),
+    path('', include(dispatchurls))
+    # path('', include(mainurls)),
 ]
 
 # if DEBUG:
