@@ -9,12 +9,12 @@ from . import views
 
 urlpatterns = [
     # path('api/', include(routers.urls)),
-    path('register/user/', views.createUser),
-    path('register/driver/', views.DriverAccRegisterView.as_view()),
-    path('register/company/', views.CompanyAccRegisterView.as_view()),
-    path('login/', views.UserLoginView.as_view()),
+    path('register/user', views.createUser),
+    path('register/driver', views.DriverAccRegisterView.as_view()),
+    path('register/company', views.CompanyAccRegisterView.as_view()),
+    path('login', views.UserLoginView.as_view()),
     # path('drivers/login/', views.DriverLoginView.as_view()),
     # path('companys/login/', views.CompanyLoginView.as_view()),
-    path('token/obtain/', jwt_views.TokenObtainPairView.as_view(), name='token_create'),  # override sjwt stock token
-    path('token/refresh/', jwt_views.TokenRefreshView.as_view(), name='token_refresh'),
+    path('token/obtain', jwt_views.TokenObtainPairView.as_view(), name='token_create'),  # override sjwt stock token
+    path('token/refresh', jwt_views.TokenRefreshView.as_view(), name='token_refresh'),
 ]

@@ -59,9 +59,9 @@ INSTALLED_APPS = [
     'rest_framework',
     # local apps
     'user',
-    'main',
+    # 'main',
     'dispatch',
-    # 'community',
+    'community',
 ]
 
 MIDDLEWARE = [

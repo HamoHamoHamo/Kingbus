@@ -29,6 +29,8 @@ class UserLoginView(APIView):
                 'refresh': serializer.validated_data['refresh'],
                 'authenticatedUser': {
                     'username': serializer.validated_data['username'],
+                    #name 추가
+                    'name': serializer.validated_data['name'],
                     'role': serializer.validated_data['role']
                 }
             }

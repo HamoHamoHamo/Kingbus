@@ -9,10 +9,10 @@ class Dispatch(models.Model):
     regularly = models.OneToOneField('RegularlyOrder', on_delete=models.CASCADE, blank=True, null=True) #셔틀 DB는 추후 반영
     user = models.ForeignKey(User, on_delete=models.CASCADE)
 
-    order_time = models.DateTimeField(auto_now_add=True)#주문 신청 시간
-    estimate_order_time = models.DateTimeField(blank=True, null=True)#견적 신청 시간
-    estimate_confirmed_time = models.DateTimeField(blank=True, null=True)#견적 확정 시간
-    reservation_confirmed = models.BooleanField(default=False)#예약 확정 여부
+    order_time = models.DateTimeField(auto_now_add=True)# 주문 신청 시간
+    estimate_order_time = models.DateTimeField(blank=True, null=True)# 견적 신청 시간
+    estimate_confirmed_time = models.DateTimeField(blank=True, null=True)# 견적 확정 시간
+    reservation_confirmed = models.BooleanField(default=False)# 예약 확정 여부
 
     class Meta:
         db_table = 'kingbus_dispatch'
@@ -70,11 +70,11 @@ class DispatchEstimate(models.Model):
     bus_cnt = models.CharField(max_length=5)
     bus_type = models.CharField(max_length=64)
 
-    is_toll_gate = models.BooleanField(default=False)
-    is_parking = models.BooleanField(default=False)
-    is_accomodation = models.BooleanField(default=False)
-    is_meal = models.BooleanField(default=False)
-    is_convenience = models.BooleanField(default=False)
+    is_tollgate = models.BooleanField(default=False)# 톨비
+    is_parking = models.BooleanField(default=False)# 주차비
+    is_accomodation = models.BooleanField(default=False)# 숙박비
+    is_meal = models.BooleanField(default=False)# 식사비
+    is_convenience = models.BooleanField(default=False)# 편의시설
 
     class Meta:
         db_table = 'kingbus_estimate'

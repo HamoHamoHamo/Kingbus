@@ -3,6 +3,7 @@ from uuid import uuid4
 from django.utils import timezone
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
+from community.models import Profile
 # below imports are for global services localizations
 # from django.utils import timezone 
 # from django.utils.translation import ugettext_lazy as _
@@ -88,16 +89,17 @@ class User(AbstractBaseUser):
         return self.username
 
 
-def upload_to_func_driver_car_driverlicense(instance, filename):
-    return "/".join(['driver_car_driverlicense',upload_to_func_common(instance, filename)])
-def upload_to_func_driver_car_photo(instance, filename):
-    return "/".join(['driver_car_photo',upload_to_func_common(instance, filename)])
-def upload_to_func_driver_profile_tradeunion_certificate(instance, filename):
-    return "/".join(['driver_profile_tradeunion_certificate',upload_to_func_common(instance, filename)])
 
 
 class DriverAcc(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    def upload_to_func_driver_car_driverlicense(instance, filename):
+        return "/".join(['driver_car_driverlicense',upload_to_func_common(instance, filename)])
+    def upload_to_func_driver_car_photo(instance, filename):
+        return "/".join(['driver_car_photo',upload_to_func_common(instance, filename)])
+    def upload_to_func_driver_profile_tradeunion_certificate(instance, filename):
+        return "/".join(['driver_profile_tradeunion_certificate',upload_to_func_common(instance, filename)])
+    
+    user = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True)
     # username = models.CharField(max_length=32, unique=True)
     # email = models.EmailField(max_length=255, unique=True)
     # name = models.CharField(max_length=16)
@@ -133,16 +135,17 @@ class DriverAcc(models.Model):
     filesavefield = 'driveracc'
 
 
-def upload_to_func_company_business_registration(instance, filename):
-    return "/".join(['company_business_registration',upload_to_func_common(instance, filename)])
-def upload_to_func_company_profile_transportationbusiness_registration(instance, filename):
-    return "/".join(['company_profile_transportationbusiness_registration',upload_to_func_common(instance, filename)])
-def upload_to_func_company_profile_tradeunion_certificate(instance, filename):
-    return "/".join(['company_profile_tradeunion_certificate',upload_to_func_common(instance, filename)])
 
 
 class CompanyAcc(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    def upload_to_func_company_business_registration(instance, filename):
+        return "/".join(['company_business_registration',upload_to_func_common(instance, filename)])
+    def upload_to_func_company_profile_transportationbusiness_registration(instance, filename):
+        return "/".join(['company_profile_transportationbusiness_registration',upload_to_func_common(instance, filename)])
+    def upload_to_func_company_profile_tradeunion_certificate(instance, filename):
+        return "/".join(['company_profile_tradeunion_certificate',upload_to_func_common(instance, filename)])
+    
+    user = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True)
     # username = models.CharField(max_length=32, unique=True)
     # email = models.EmailField(max_length=255, unique=True)# manager's email
     # name = models.CharField(max_length=16)# manager's name
@@ -178,12 +181,9 @@ class CompanyAcc(models.Model):
 
 
 # signal/receiver on model creation
-# def create_profile_model(sender, instance, created, **kwargs):
-#     """Create ModelB for every new ModelA."""
-#     if created:
-#         if instance.role == 'd':
-#             DriverAcc.objects.create(user=instance)
-#         if instance.role == 'c':
-#             CompanyAcc.objects.create(user=instance)
+def create_profile_model(sender, instance, created, **kwargs):
+    """Create ModelB for every new ModelA."""
+    if created:
+        Profile.objects.create(user=instance, nickname=instance.username)
 
-# models.signals.post_save.connect(create_profile_model, sender=User,weak=False, dispatch_uid='models.create_profile_model')
+models.signals.post_save.connect(create_profile_model, sender=User,weak=False, dispatch_uid='models.create_profile_model')

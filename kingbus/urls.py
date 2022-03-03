@@ -17,15 +17,16 @@ from django.contrib import admin
 from django.urls import include, path
 # from django.conf.urls.static import static
 # from .settings import DEBUG, MEDIA_URL, MEDIA_ROOT
-from main import urls as mainurls
+# from main import urls as mainurls
 from user import urls as userurls
 from dispatch import urls as dispatchurls
+from community import urls as communityurls
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include(userurls)),
-    path('', include(dispatchurls))
-    # path('', include(mainurls)),
+    path('', include(dispatchurls)),
+    path('board/', include(communityurls)),
 ]
 
 # if DEBUG:

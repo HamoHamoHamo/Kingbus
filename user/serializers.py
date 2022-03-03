@@ -49,6 +49,7 @@ class UserLoginSerializer(serializers.Serializer):
             'access': access_token,
             'refresh': refresh_token,
             'username': user.username,
+            'name': user.name,
             'role' : user.role
         }
         return validation
@@ -140,11 +141,13 @@ class DriverRegistrationSerializer(serializers.ModelSerializer):
         return data
     def create(self, validated_data):
         validated_data['role']='d'
+        driver_com_name = validated_data.pop('driver_com_name')
+        driver_car_driverlicense = validated_data.pop('driver_car_driverlicense')
         user = User.objects.create_user(**validated_data)
         driver = DriverAcc.objects.create(
             user = user,
-            driver_com_name=validated_data['driver_com_name'],
-            driver_car_driverlicense=validated_data['driver_car_driverlicense'],
+            driver_com_name=driver_com_name,
+            driver_car_driverlicense=driver_car_driverlicense,
         )
         return user, driver
 
@@ -166,11 +169,13 @@ class CompanyRegistrationSerializer(serializers.ModelSerializer):
         return data
     def create(self, validated_data):
         validated_data['role']='c'
+        company_com_name = validated_data.pop('company_com_name')
+        company_business_registration = validated_data.pop('company_business_registration')
         user = User.objects.create_user(**validated_data)
         company = CompanyAcc.objects.create(
             user = user,
-            company_com_name=validated_data['company_com_name'],
-            company_business_registration=validated_data['company_business_registration'],
+            company_com_name=company_com_name,
+            company_business_registration=company_business_registration,
         )
         return user, company
 
