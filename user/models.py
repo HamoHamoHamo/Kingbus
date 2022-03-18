@@ -132,7 +132,7 @@ class DriverAcc(models.Model):
 
     # USERNAME_FIELD = 'username'
     # REQUIRED_FIELDS = ['userid']
-    filesavefield = 'driveracc'
+    # filesavefield = 'driveracc'
 
 
 
@@ -177,7 +177,7 @@ class CompanyAcc(models.Model):
 
     # USERNAME_FIELD = 'username'
     # REQUIRED_FIELDS = ['userid']
-    filesavefield = 'companyacc'
+    # filesavefield = 'companyacc'
 
 
 # signal/receiver on model creation

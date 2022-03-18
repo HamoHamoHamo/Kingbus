@@ -47,7 +47,7 @@ class Image(models.Model):
     
     #FK
     post = models.ForeignKey(Post, on_delete=models.CASCADE)
-    image = models.ImageField(upload_to=upload_to_func)
+    image = models.ImageField(upload_to=upload_to_func, null=True, blank=True)
 
     class Meta:
         db_table = 'kingbus_community_image'
@@ -70,7 +70,7 @@ class Comment(models.Model):
 
 class Recomment(models.Model):
     recomment = models.TextField()
-    like_cnt = models.IntegerField()
+    like_cnt = models.IntegerField(default=0)
     date_created = models.DateTimeField(auto_now_add=True)
     date_modified = models.DateTimeField(auto_now=True)
     #FK
@@ -80,7 +80,7 @@ class Recomment(models.Model):
     # def __str__(self) -> str:
     #     return self.profile.nickname
     class Meta:
-        db_table = 'kingbus_comminity_recomment'
+        db_table = 'kingbus_community_recomment'
 
 
 """

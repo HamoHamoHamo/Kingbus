@@ -24,18 +24,17 @@ class UserLoginSerializer(serializers.Serializer):
         try:
             user = User.objects.get(username=data['username'])
         # user = authenticate(**data)
-            print(user)
         # if user is None:
         except:
-            raise serializers.ValidationError("Invalid login credentials")
+            raise serializers.ValidationError("Invalid ID")
         # if data['role'] is None:
         #     raise serializers.ValidationError("Invalid login credentials2")
-        if len(data['role'])>1:
-            raise serializers.ValidationError("Invalid login credentials3")
-        elif data['role']!=user.role:
-            raise serializers.ValidationError("Invalid login credentials4")
+        # if len(data['role'])>1:
+        #     raise serializers.ValidationError("Bad Request")
         if not user.check_password(data['password']):
             raise serializers.ValidationError("Invalid password")
+        if data['role']!=user.role:
+            raise serializers.ValidationError("Invalid login credentials")
         # TODO https://eunjin3786.tistory.com/271
     
         refresh = RefreshToken.for_user(user)
@@ -56,52 +55,8 @@ class UserLoginSerializer(serializers.Serializer):
 
 '''
 class DriverLoginSerializer(serializers.Serializer):
-    username = serializers.CharField(max_length=32)
-    password = serializers.CharField(max_length=128, write_only=True)
-    access = serializers.CharField(read_only=True)
-    refresh = serializers.CharField(read_only=True)
-    def validate(self, data):
-        try:
-            driver = DriverAcc.objects.get(username=data['username'])
-        except:
-            raise serializers.ValidationError("Invalid login credentials")
-        if not driver.check_password(data['password']):
-            raise serializers.ValidationError("Invalid password")
-    
-        refresh = RefreshToken.for_user(driver)
-        refresh_token = str(refresh)
-        access_token = str(refresh.access_token)
-        # update_last_login(None, user)
-        validation = {
-            'access': access_token,
-            'refresh': refresh_token,
-            'username': driver.username,
-        }
-        return validation
 
 class CompanyLoginSerializer(serializers.Serializer):
-    username = serializers.CharField(max_length=32)
-    password = serializers.CharField(max_length=128, write_only=True)
-    access = serializers.CharField(read_only=True)
-    refresh = serializers.CharField(read_only=True)
-    def validate(self, data):
-        try:
-            company = CompanyAcc.objects.get(username=data['username'])
-        except:
-            raise serializers.ValidationError("Invalid login credentials")
-        if not company.check_password(data['password']):
-            raise serializers.ValidationError("Invalid password")
-    
-        refresh = RefreshToken.for_user(company)
-        refresh_token = str(refresh)
-        access_token = str(refresh.access_token)
-        # update_last_login(None, user)
-        validation = {
-            'access': access_token,
-            'refresh': refresh_token,
-            'username': company.username,
-        }
-        return validation
 '''
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
@@ -110,7 +65,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         fields = ('username', 'password', 'email', 'name' , 'num')
         extra_kwargs = {"password": {"write_only": True}}
     def validate(self, data):# TODO merge functions
-        if len(str(data['username'])) < 8:
+        if len(str(data['username'])) < 4:
             raise serializers.ValidationError("ID가 너무 짧습니다.")
         if len(str(data['password'])) < 4:
             raise serializers.ValidationError("비밀번호가 너무 짧습니다.")
@@ -132,7 +87,7 @@ class DriverRegistrationSerializer(serializers.ModelSerializer):
     driver_com_name = serializers.CharField(max_length=32)
     driver_car_driverlicense = serializers.ImageField()
     def validate(self, data):
-        if len(str(data['username'])) < 8:
+        if len(str(data['username'])) < 4:
             raise serializers.ValidationError("ID가 너무 짧습니다.")
         if len(str(data['password'])) < 4:
             raise serializers.ValidationError("비밀번호가 너무 짧습니다.")
@@ -160,7 +115,7 @@ class CompanyRegistrationSerializer(serializers.ModelSerializer):
     company_com_name = serializers.CharField(max_length=32)
     company_business_registration = serializers.ImageField()
     def validate(self, data):
-        if len(str(data['username'])) < 8:
+        if len(str(data['username'])) < 4:
             raise serializers.ValidationError("ID가 너무 짧습니다.")
         if len(str(data['password'])) < 4:
             raise serializers.ValidationError("비밀번호가 너무 짧습니다.")
@@ -178,4 +133,42 @@ class CompanyRegistrationSerializer(serializers.ModelSerializer):
             company_business_registration=company_business_registration,
         )
         return user, company
+
+
+class DriverProfileViewSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        exclude = ('username', 'password', 'role')
+    driver = serializers.SerializerMethodField()
+    def get_driver(self, obj):
+        instance = obj.driveracc
+        return DriverDetailSerializer(instance).data
+
+
+class CompanyProfileViewSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        exclude = ('username', 'password', 'role')
+    company = serializers.SerializerMethodField()
+    def get_company(self, obj):
+        instance = obj.companyacc
+        return CompanyDetailSerializer(instance).data
+
+
+class DriverDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DriverAcc
+        # fields = '__all__'
+        exclude = ('user',)
+    driver_com_name = serializers.CharField(required=False)
+    driver_car_driverlicense = serializers.ImageField(required=False)
+
+    
+class CompanyDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CompanyAcc
+        # fields = '__all__'
+        exclude = ('user',)
+    company_com_name = serializers.CharField(required=False)
+    company_business_registration = serializers.ImageField(required=False)
 

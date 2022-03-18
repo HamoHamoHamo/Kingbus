@@ -1,14 +1,17 @@
 # from django.conf import settings
 from django.utils import timezone
+
 from rest_framework import status
+from rest_framework.settings import api_settings
 from rest_framework.views import APIView
 from rest_framework.response import Response
 # from django.core.exceptions import ObjectDoesNotExist
 # from rest_framework.permissions import AllowAny
 # import jwt
+# from rest_framework.pagination import PageNumberPagination
 
 from dispatch.models import Dispatch, DispatchEstimate, DispatchOrder
-from .serializers import DispatchSerializer, DispatchEstimateSerializer, DispatchOrderSerializer #DispatchOrderDetailSerializer, 
+from .serializers import DispatchListSerializer, DispatchSerializer, DispatchEstimateSerializer, DispatchOrderSerializer #DispatchOrderDetailSerializer, 
 
 def invalid_credentials():
     return Response({"message": "Invalid Credentials"}, status=status.HTTP_403_FORBIDDEN)
@@ -34,7 +37,7 @@ class DispatchOrderView(APIView):
             if order:
                 return Response(self.serializer_class(order, many=True).data, status=status.HTTP_200_OK)
             else:
-                return Response({"message": "No Contents"}, status=status.HTTP_204_NO_CONTENT)
+                return Response({"message": "No Contents"}, status=status.HTTP_204_NO_CONTENT)        
         else:
             return Response({"message": "Bad Request."}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -51,7 +54,7 @@ class DispatchOrderView(APIView):
             response = {
                 'success': True,
                 'statusCode': status.HTTP_201_CREATED,
-                'dispatch': serializer.validated_data
+                'dispatch': serializer.data
             }
             return Response(response, status=status.HTTP_201_CREATED)
         else:
@@ -259,4 +262,21 @@ class DispatchView(APIView):
 #     serializer_class = DispatchSerializer
 
 #     def put(self, request): TODO update state of dispatch
-        
+
+
+class DispatchListView(APIView):
+    def get (self, request):
+        if request.user.role == 'u':
+            return invalid_credentials()
+        date = str(timezone.localdate())
+        print(date)
+        dispatch = Dispatch.objects.filter(order__departure_date__gte=date).order_by('-pk')#https://gaussian37.github.io/python-django-django-query-set/
+        paginator = api_settings.DEFAULT_PAGINATION_CLASS()
+        result_page = paginator.paginate_queryset(dispatch, request)
+        serializer = DispatchListSerializer(result_page, many=True, context={'request':request})
+        return Response({
+            'count': paginator.page.paginator.count,
+            'results': serializer.data
+            }
+        )
+

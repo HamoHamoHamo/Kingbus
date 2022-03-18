@@ -69,7 +69,7 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
-    # CSRFToken may need to be disabled. using JWT for multi platform
+    # CSRFToken may need to be disabled. using JWT for multi platform TODO
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
@@ -107,14 +107,7 @@ DATABASES = {
     #     'ENGINE': 'django.db.backends.sqlite3',
     #     'NAME': BASE_DIR / 'db.sqlite3',
     # } TODO ? : https://django-orm-cookbook-ko.readthedocs.io/en/latest/multiple_databases.html
-    'default':{
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': get_secret("DJANGO_DB_NAME"),
-        'USER': get_secret("DJANGO_DB_USER"),
-        'PASSWORD': get_secret("DJANGO_DB_PASSWORD"),
-        'HOST': get_secret("DJANGO_DB_HOST"),
-        'PORT': get_secret("DJANGO_DB_PORT"),
-    }
+    'default': get_secret("DJANGO_DB_CONFIG")
 }
 
 
@@ -168,12 +161,10 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # switched to using drf-simplejwt
 # https://hackernoon.com/110percent-complete-jwt-authentication-with-django-and-react-2020-iejq34ta
 REST_FRAMEWORK = {
-    'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.IsAuthenticated',
-    ),
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
-    ),
+    'DEFAULT_PERMISSION_CLASSES': ('rest_framework.permissions.IsAuthenticated',),
+    'DEFAULT_AUTHENTICATION_CLASSES': ('rest_framework_simplejwt.authentication.JWTAuthentication',),
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 100,
 }
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(days=5),

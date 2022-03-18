@@ -26,7 +26,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include(userurls)),
     path('', include(dispatchurls)),
-    path('board/', include(communityurls)),
+    path('', include(communityurls)),
 ]
 
 # if DEBUG:

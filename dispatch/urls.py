@@ -13,4 +13,6 @@ urlpatterns = [
     path('estimate/list/o/<int:order_id>',views.DispatchEstimateView.as_view()),
 
     path('dispatch',views.DispatchView.as_view()),
+
+    path('orderlist',views.DispatchListView.as_view()),
 ]

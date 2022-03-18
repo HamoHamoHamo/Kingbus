@@ -32,9 +32,11 @@ class DispatchOrder(models.Model):
     departure_time = models.TimeField()
     arrival_date = models.DateField(blank=True, null=True)
     arrival_time = models.TimeField(blank=True, null=True)
-    is_driver = models.BooleanField(default=False)
     total_number = models.CharField(max_length=10)
     convenience = models.TextField(blank=True)
+    is_driver = models.BooleanField(default=False)
+    driver_schedule = models.TextField(blank=True)
+    total_distance = models.CharField(max_length=4)
 
     # 견적 확정시 반영 부분
     # price = models.CharField(max_length=10, blank=True)
@@ -67,6 +69,7 @@ class DispatchEstimate(models.Model):
     driverorcompany = models.ForeignKey(User, on_delete=models.CASCADE)
 
     price = models.CharField(max_length=10)
+    pricebycar = models.CharField(max_length=10)
     bus_cnt = models.CharField(max_length=5)
     bus_type = models.CharField(max_length=64)
 
