@@ -11,7 +11,8 @@ from rest_framework.response import Response
 # from rest_framework.pagination import PageNumberPagination
 
 from dispatch.models import Dispatch, DispatchEstimate, DispatchOrder
-from .serializers import DispatchListSerializer, DispatchSerializer, DispatchEstimateSerializer, DispatchOrderSerializer #DispatchOrderDetailSerializer, 
+from .serializers import DispatchEstimateListSerializer, DispatchListSerializer, DispatchSerializer, DispatchEstimateSerializer, DispatchOrderSerializer
+from dispatch import serializers #DispatchOrderDetailSerializer, 
 
 def invalid_credentials():
     return Response({"message": "Invalid Credentials"}, status=status.HTTP_403_FORBIDDEN)
@@ -30,16 +31,16 @@ class DispatchOrderView(APIView):
 
     def get(self, request, **kwargs):
         if 'user_id' in kwargs:
-            if not kwargs['user_id'] is request.user.id:
+            return Response({"message": "Bad Request."}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            if request.user.role != 'u':
                 return invalid_credentials()
             # dispatch = Dispatch.objects.filter(user=request.user)
-            order = DispatchOrder.objects.filter(dispatch__user=request.user)
+            order = DispatchOrder.objects.filter(dispatch__user=request.user).select_related('dispatch')
             if order:
                 return Response(self.serializer_class(order, many=True).data, status=status.HTTP_200_OK)
             else:
                 return Response({"message": "No Contents"}, status=status.HTTP_204_NO_CONTENT)        
-        else:
-            return Response({"message": "Bad Request."}, status=status.HTTP_400_BAD_REQUEST)
 
     def post(self, request, **kwargs):
         try:
@@ -71,11 +72,11 @@ class DispatchOrderDetailView(APIView):
             dispatch = Dispatch.objects.get(order__id=kwargs['order_id'])
         except:
             return page_not_found()
-        if dispatch.user != request.user:
+        if request.user == 'u' and dispatch.user != request.user:
             return invalid_credentials()
         return Response(self.serializer_class(instance=order).data)
 
-    def put(self, request, **kwargs):
+    def patch(self, request, **kwargs):
         try:
             order = DispatchOrder.objects.get(id=kwargs['order_id'])
             dispatch = Dispatch.objects.get(order=order)
@@ -113,30 +114,38 @@ class DispatchEstimateView(APIView):
 
     def get(self, request, **kwargs):
         estimate = None
-        if 'user_id' in kwargs:
-            if request.user.id is kwargs['user_id']:
-                estimate = DispatchEstimate.objects.filter(driverorcompany=request.user)
-                print(estimate.first())
-                if estimate.first().driverorcompany != request.user:
-                    return invalid_credentials()
-                return Response(self.serializer_class(instance=estimate, many=True).data)
-            else:
-                return page_not_found()
-        elif 'order_id' in kwargs:
+        if 'order_id' in kwargs:
             try:
-                dispatch = Dispatch.objects.get(order=kwargs['order_id'])
-                estimate = DispatchEstimate.objects.filter(order=kwargs['order_id'])
+                estimate = DispatchEstimate.objects.filter(order=kwargs['order_id'], order__dispatch__dispatch_status__lt=2).select_related('order').select_related('driverorcompany')#.select_related('driverorcompany__profile')
+                print(estimate.first().order)
                 if estimate:
                 # TODO https://docs.djangoproject.com/en/dev/ref/models/querysets/#exists
-                    if dispatch.user == request.user:
-                        return Response(self.serializer_class(instance=estimate, many=True).data)
+                    if estimate.first().order.dispatch.user == request.user:
+                        return Response(DispatchEstimateListSerializer(instance=estimate, many=True).data)
                     else:
                         return invalid_credentials()
+                else:
+                    return page_not_found()
             except:
-                return page_not_found()
+                return Response({"message": "No Contents"}, status=status.HTTP_204_NO_CONTENT)
         elif not kwargs:
+        # if 'user_id' in kwargs:
+            if request.user.role != 'u':
+                estimate = DispatchEstimate.objects.filter(driverorcompany=request.user).select_related('order')
+                # TODO https://daeguowl.tistory.com/171
+                # TODO 배차진행상태로 나눠서 API호출할지?(4단계로)
+                # TODO !!!중요!!! 배차에 관한 대부분의 정보를 담는 페이지들은 모두 dispatchdetailview로 옮길것. 그리고 모든 정보를 포함해 한번에 보여줄것. 예시) /estimate/list/u , /order/list/ 등
+                # if estimate.first().driverorcompany != request.user:
+                #     return invalid_credentials()
+                serializer = DispatchEstimateListSerializer(instance=estimate, many=True).data
+                if serializer:
+                    return Response(serializer)
+                else:
+                    return Response({"message": "No Contents"}, status=status.HTTP_204_NO_CONTENT)
+            else:
+                return invalid_credentials()
+        else:
             return Response({"detail": "Method \"GET\" not allowed."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
-        return Response({"message": "No Contents"}, status=status.HTTP_204_NO_CONTENT)
 
     def post(self, request, **kwargs):
         # print(request.user.role)
@@ -184,7 +193,7 @@ class DispatchEstimateDetailView(APIView):
             return invalid_credentials()
         return Response(self.serializer_class(instance=estimate).data)
 
-    def put(self, request, **kwargs):
+    def patch(self, request, **kwargs):
         try:
             estimate = DispatchEstimate.objects.get(id=kwargs['estimate_id'])
         except:
@@ -227,18 +236,18 @@ class DispatchView(APIView):
             dispatch = Dispatch.objects.get(order=request.data['order'])
         except:
             return Response({"message": "Bad request", "detail": "Order argument not given or invalid."}, status=status.HTTP_400_BAD_REQUEST)            
-        if request.user != dispatch.user or request.user.role != 'u':
-            return invalid_credentials()
-        if dispatch.reservation_confirmed:
-            return Response({"message": "Bad request", "detail": "Reservation already confirmed. Cancel the Order and re-submit."}, status=status.HTTP_400_BAD_REQUEST)
         if not 'selected_estimate' in request.data:
             return Response({"message": "Bad request", "detail": "Estimate argument not given or invalid."}, status=status.HTTP_400_BAD_REQUEST)
+        if request.user != dispatch.user or request.user.role != 'u':
+            return invalid_credentials()
+        if dispatch.dispatch_status != '1':
+            return Response({"message": "Bad request", "detail": "Reservation already confirmed."}, status=status.HTTP_400_BAD_REQUEST)
         else:
             requestdata = request.data.copy()
             requestdata['user']= request.user.id
             # ['estimate_order_time']
-            requestdata['estimate_confirmed_time']=timezone.now()
-            requestdata['reservation_confirmed']=True
+            requestdata['selected_time']=timezone.now()
+            requestdata['dispatch_status']='2'
             serializer = self.serializer_class(dispatch, requestdata)
             valid = serializer.is_valid(raise_exception=True)
             # print(serializer.validated_data['selected_estimate'].order)
@@ -261,7 +270,7 @@ class DispatchView(APIView):
 # class DispatchDetailView(APIView):
 #     serializer_class = DispatchSerializer
 
-#     def put(self, request): TODO update state of dispatch
+#     def patch(self, request): TODO update state of dispatch
 
 
 class DispatchListView(APIView):
@@ -270,7 +279,7 @@ class DispatchListView(APIView):
             return invalid_credentials()
         date = str(timezone.localdate())
         print(date)
-        dispatch = Dispatch.objects.filter(order__departure_date__gte=date).order_by('-pk')#https://gaussian37.github.io/python-django-django-query-set/
+        dispatch = Dispatch.objects.filter(order__departure_date__gte=date, dispatch_status__lt=2).order_by('-pk')#https://gaussian37.github.io/python-django-django-query-set/
         paginator = api_settings.DEFAULT_PAGINATION_CLASS()
         result_page = paginator.paginate_queryset(dispatch, request)
         serializer = DispatchListSerializer(result_page, many=True, context={'request':request})

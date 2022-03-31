@@ -64,7 +64,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         model = User
         fields = ('username', 'password', 'email', 'name' , 'num')
         extra_kwargs = {"password": {"write_only": True}}
-    def validate(self, data):# TODO merge functions
+    def validate(self, data):# TODO merge functions below
         if len(str(data['username'])) < 4:
             raise serializers.ValidationError("ID가 너무 짧습니다.")
         if len(str(data['password'])) < 4:

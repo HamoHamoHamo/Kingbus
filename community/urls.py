@@ -4,8 +4,8 @@ from . import views
 
 urlpatterns = [
     path('board',views.PostView.as_view()),
-    path('boardlist',views.PostListView.as_view()),
     path('board/<int:board_id>',views.PostDetailView.as_view()),
+    path('board/list',views.PostListView.as_view()),
 
     path('board/comment',views.PostCommentView.as_view()),
     path('board/comment/<int:comment_id>',views.PostCommentView.as_view()),

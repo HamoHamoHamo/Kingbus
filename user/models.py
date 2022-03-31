@@ -91,7 +91,7 @@ class User(AbstractBaseUser):
 
 
 
-class DriverAcc(models.Model):
+class DriverAcc(models.Model): # TODO 기사,회사프로필사진 / 차량다진 다중업로드
     def upload_to_func_driver_car_driverlicense(instance, filename):
         return "/".join(['driver_car_driverlicense',upload_to_func_common(instance, filename)])
     def upload_to_func_driver_car_photo(instance, filename):
@@ -111,8 +111,8 @@ class DriverAcc(models.Model):
     driver_car_num = models.CharField(max_length=10, null=True, blank=True)
     driver_car_kind = models.CharField(max_length=32, null=True, blank=True)
     driver_car_year = models.CharField(max_length=4, null=True, blank=True)
-    driver_car_photo = models.ImageField(upload_to=upload_to_func_driver_car_photo, null=True, blank=True) # try to use 1:1 rel for upload_to func usage. TODO
-    driver_profile_tradeunion_certificate = models.FileField(upload_to=upload_to_func_driver_profile_tradeunion_certificate, null=True, blank=True) # try to use 1:1 rel for upload_to func usage. TODO
+    driver_car_photo = models.ImageField(upload_to=upload_to_func_driver_car_photo, null=True, blank=True)
+    driver_profile_tradeunion_certificate = models.FileField(upload_to=upload_to_func_driver_profile_tradeunion_certificate, null=True, blank=True)
     driver_profile_introduction = models.CharField(max_length=200, null=True, blank=True)
     driver_profile_introduction_video = models.TextField(null=True, blank=True)
     #models.FileField(upload_to="driver_introduction_video"+str(upload_to_func_common), null=True, blank=True) # TODO Youtube or File upload
@@ -153,8 +153,8 @@ class CompanyAcc(models.Model):
     company_com_name = models.CharField(max_length=32)
     company_business_registration = models.ImageField(upload_to=upload_to_func_company_business_registration)
     # Profile section below
-    company_profile_transportationbusiness_registration = models.ImageField(upload_to=upload_to_func_company_profile_transportationbusiness_registration, null=True, blank=True) # try to use 1:1 rel for upload_to func usage. TODO
-    company_profile_tradeunion_certificate = models.FileField(upload_to=upload_to_func_company_profile_tradeunion_certificate, null=True, blank=True) # try to use 1:1 rel for upload_to func usage. TODO
+    company_profile_transportationbusiness_registration = models.ImageField(upload_to=upload_to_func_company_profile_transportationbusiness_registration, null=True, blank=True)
+    company_profile_tradeunion_certificate = models.FileField(upload_to=upload_to_func_company_profile_tradeunion_certificate, null=True, blank=True)
     company_profile_introduction = models.CharField(max_length=200, null=True, blank=True)
     company_profile_introduction_video = models.TextField(null=True, blank=True)
     #models.FileField(upload_to="company_introduction_video"+str(upload_to_func_common), null=True, blank=True)

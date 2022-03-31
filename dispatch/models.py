@@ -1,3 +1,4 @@
+from django import dispatch
 from django.db import models
 from user.models import User
 
@@ -10,9 +11,13 @@ class Dispatch(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
 
     order_time = models.DateTimeField(auto_now_add=True)# 주문 신청 시간
-    estimate_order_time = models.DateTimeField(blank=True, null=True)# 견적 신청 시간
-    estimate_confirmed_time = models.DateTimeField(blank=True, null=True)# 견적 확정 시간
-    reservation_confirmed = models.BooleanField(default=False)# 예약 확정 여부
+    estimate_time = models.DateTimeField(blank=True, null=True)# 견적 신청 시간?
+    selected_time = models.DateTimeField(blank=True, null=True)# 선택 완료 시간
+    confirmed_time = models.DateTimeField(blank=True, null=True)# 결제 완료 시간
+    finished_time = models.DateTimeField(blank=True, null=True)# 운행 완료 시간
+    
+    dispatch_status = models.CharField(max_length=1,default='0')# 배차진행상태
+    # 0: 알수없음, 1: 대기중, 2: 선택완료, 3: 결제완료, 4: 운행완료?
 
     class Meta:
         db_table = 'kingbus_dispatch'
@@ -26,17 +31,19 @@ class DispatchOrder(models.Model):
     purpose = models.CharField(max_length=100)
     reference = models.TextField(blank=True)
     departure = models.CharField(max_length=255)
+    departure_short = models.CharField(max_length=64)
     arrival = models.CharField(max_length=255)
+    arrival_short = models.CharField(max_length=64)
     stopover = models.TextField(blank=True)
     departure_date = models.DateField()
     departure_time = models.TimeField()
-    arrival_date = models.DateField(blank=True, null=True)
-    arrival_time = models.TimeField(blank=True, null=True)
+    comeback_date = models.DateField(blank=True, null=True)
+    comeback_time = models.TimeField(blank=True, null=True)
     total_number = models.CharField(max_length=10)
     convenience = models.TextField(blank=True)
     is_driver = models.BooleanField(default=False)
     driver_schedule = models.TextField(blank=True)
-    total_distance = models.CharField(max_length=4)
+    total_distance = models.CharField(max_length=4, null=True, blank=True)
 
     # 견적 확정시 반영 부분
     # price = models.CharField(max_length=10, blank=True)

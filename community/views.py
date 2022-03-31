@@ -48,7 +48,7 @@ class PostDetailView(APIView):
         return Response(self.serializer_class(post).data)
 
 
-    def put(self, request, **kwargs):
+    def patch(self, request, **kwargs):
         post = get_object_or_404(Post, id=kwargs['board_id'])
         if post.profile != request.user.profile:
             return invalid_credentials()

@@ -1,4 +1,3 @@
-from dataclasses import field
 from rest_framework import serializers
 from community.models import Image, Post, Profile, Comment, Recomment
 
@@ -29,11 +28,16 @@ class PostDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Post
         fields = '__all__'
+    profile = serializers.CharField(required=False)
     images = serializers.SerializerMethodField()
 
     def get_images(self, obj): # https://eunjin3786.tistory.com/268
         image = obj.image_set.all()
         return ImageSerializer(instance=image, many=True).data
+
+    def update(self, instance, validated_data):
+        validated_data['profile'] = self.context['request'].user.profile
+        return super().update(instance, validated_data)
 
 class ImageSerializer(serializers.ModelSerializer):
     class Meta:
