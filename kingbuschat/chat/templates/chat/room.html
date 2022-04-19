@@ -64,7 +64,8 @@
       const userName = JSON.parse(document.getElementById('json-username').textContent);
 
       const chatSocket = new WebSocket('ws://' + 'kingbus.co.kr:8000' + '/ws/' + roomName + '/');
-      {% comment %} const chatSocket = new WebSocket('ws://' + window.location.host + '/ws/' + roomName + '/'); {% endcomment %}
+      // const chatSocket = new WebSocket('ws://' + 'localhost:8001' + '/ws/' + roomName + '/');
+      // {% comment %} const chatSocket = new WebSocket('ws://' + window.location.host + '/ws/' + roomName + '/'); {% endcomment %}
 
       chatSocket.onmessage = function (e) {
         console.log('onmessage');

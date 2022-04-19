@@ -1,9 +1,10 @@
 # from django.contrib.auth import authenticate
 from datetime import datetime
 
-from user.serializers import CompanyDetailSerializer, DriverDetailSerializer
+from user.serializers import CompanyDetailSerializer, DriverDetailSerializer, KingbusReviewSerializer
 from .models import Dispatch, DispatchEstimate, DispatchOrder#, User
 from rest_framework import serializers
+
 
 class DispatchOrderSerializer(serializers.ModelSerializer):
     #왕복(lt), 편도(st), 셔틀(ro)?
@@ -15,7 +16,6 @@ class DispatchOrderSerializer(serializers.ModelSerializer):
     # username = serializers.CharField()
     def get_time_diff(self, attrs, array): #https://stackoverflow.com/questions/9578906/easiest-way-to-combine-date-and-time-strings-to-single-datetime-object-using-pyt
         return datetime.combine(datetime.strptime(str(attrs[array+'_date']), '%Y-%m-%d'), datetime.strptime(str(attrs[array+'_time']), '%H:%M:%S').time())
-
 
     def validate(self, attrs):
         if attrs['way'] != 'st' and attrs['way'] != 'lt' and attrs['way'] != 'ro': # 종류3개중 어느것도 아닐때
@@ -42,18 +42,6 @@ class DispatchEstimateSerializer(serializers.ModelSerializer):
     class Meta:
         model = DispatchEstimate
         fields = '__all__'
-        #exclude = ['driverorcompany']
-    # order = serializers.CharField(required=False)
-
-    # price = serializers.CharField(max_length=10)
-    # bus_cnt = serializers.CharField(max_length=5)
-    # bus_type = serializers.CharField(max_length=64)
-
-    # is_tollgate = serializers.BooleanField(default=False)
-    # is_parking = serializers.BooleanField(default=False)
-    # is_accomodation = serializers.BooleanField(default=False)
-    # is_meal = serializers.BooleanField(default=False)
-    # is_convenience = serializers.BooleanField(default=False)
 
     def validate(self, attrs):
         return super().validate(attrs)
@@ -69,30 +57,57 @@ class DispatchEstimateSerializer(serializers.ModelSerializer):
         return estimate
 
 
-class DispatchEstimateListSerializer(serializers.ModelSerializer):
+class DispatchEstimateDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DispatchEstimate
+        fields = '__all__'
+    dispatch_status = serializers.SerializerMethodField()
+    name = serializers.SerializerMethodField()
+    order = serializers.SerializerMethodField()
+    driverorcompany_profile = serializers.SerializerMethodField()
+    driverorcompany_review = serializers.SerializerMethodField()
+    def get_name(self, obj):
+        return obj.driverorcompany.name
+    def get_driverorcompany_profile(self, obj):
+        if obj.driverorcompany.role == 'd':
+            return DriverDetailSerializer(obj.driverorcompany.driveracc).data
+        else:
+            return CompanyDetailSerializer(obj.driverorcompany.companyacc).data
+    def get_driverorcompany_review(self, obj):
+        return KingbusReviewSerializer(obj.driverorcompany.review_driverorcompany, many=True).data
+    def get_order(self, obj):
+        return DispatchOrderSerializer(obj.order).data
+    def get_dispatch_status(self, obj):
+        return obj.order.dispatch.dispatch_status
+
+
+class DispatchEstimateListforUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DispatchEstimate
+        fields = '__all__'
+    name = serializers.SerializerMethodField()
+    driverorcompany_profile = serializers.SerializerMethodField()
+    def get_name(self, obj):
+        return obj.driverorcompany.name
+    def get_driverorcompany_profile(self, obj):
+        if obj.driverorcompany.role == 'd':
+            return DriverDetailSerializer(obj.driverorcompany.driveracc).data
+        else:
+            return CompanyDetailSerializer(obj.driverorcompany.companyacc).data
+
+
+class DispatchEstimateListforDCSerializer(serializers.ModelSerializer):
     class Meta:
         model = DispatchEstimate
         fields = '__all__'
     dispatch_status = serializers.SerializerMethodField()
     order = serializers.SerializerMethodField()
-    name = serializers.SerializerMethodField()
-    driverorcompany_profile = serializers.SerializerMethodField()
-    def get_name(self, obj):
-        name = obj.driverorcompany.name
-        return name
     def get_order(self, obj):
-        order = obj.order
-        return DispatchOrderSerializer(instance=order).data
+        return DispatchOrderSerializer(obj.order).data
     def get_dispatch_status(self, obj):
-        dispatch_status = obj.order.dispatch.dispatch_status
-        return dispatch_status
-    def get_driverorcompany_profile(self, obj):
-        try:
-            driverorcompany_profile = obj.driverorcompany.driveracc
-            return DriverDetailSerializer(driverorcompany_profile).data
-        except:
-            driverorcompany_profile = obj.driverorcompany.companyacc
-            return CompanyDetailSerializer(driverorcompany_profile).data
+        return obj.order.dispatch.dispatch_status
+
+
 
 class DispatchSerializer(serializers.ModelSerializer):
     class Meta:
@@ -107,8 +122,15 @@ class DispatchListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Dispatch
         fields = '__all__'
-    orders = serializers.SerializerMethodField()
-    def get_orders(self, obj):
-        order = obj.order
-        return DispatchOrderSerializer(instance=order).data
+    order = serializers.SerializerMethodField()
+    def get_order(self, obj):
+        return DispatchOrderSerializer(obj.order).data
     
+
+# class DispatchOrderListSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = Dispatch
+#         fields = '__all__'
+#     order = serializers.SerializerMethodField()
+#     def get_order(self, obj):
+#         return DispatchOrderSerializer(obj.order).data

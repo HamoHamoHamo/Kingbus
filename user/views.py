@@ -1,15 +1,28 @@
+from django import dispatch
 from django.shortcuts import get_object_or_404
 from django.core.exceptions import ObjectDoesNotExist
+
+from rest_framework_simplejwt.views import TokenRefreshView
 
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
+
+
+from dispatch.models import Dispatch
 # from rest_framework import viewsets
 
-from .serializers import CompanyDetailSerializer, CompanyProfileViewSerializer, DriverDetailSerializer, DriverProfileViewSerializer, UserLoginSerializer, UserRegistrationSerializer, DriverRegistrationSerializer, CompanyRegistrationSerializer
-from .models import User#, DriverAcc, CompanyAcc
+from .serializers import CompanyDetailSerializer, CompanyProfileViewSerializer, DriverDetailSerializer, DriverProfileViewSerializer, KingbusReviewSerializer, UserLoginSerializer, UserRegistrationSerializer, DriverRegistrationSerializer, CompanyRegistrationSerializer
+from .models import KingbusReview, User#, DriverAcc, CompanyAcc
+
+
+def invalid_credentials():
+    return Response({"message": "Invalid Credentials"}, status=status.HTTP_403_FORBIDDEN)
+
+def page_not_found():
+    return Response({"message": "Page Not Found."}, status=status.HTTP_404_NOT_FOUND)
 
 
 class UserLoginView(APIView):
@@ -58,6 +71,12 @@ class DriverLoginView(APIView):
 
 class CompanyLoginView(APIView):
 '''
+
+@api_view(['GET'])
+def userNamereturnView(request):
+    if request.method =='GET':
+        return Response({"name":request.user.name})
+
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -116,6 +135,13 @@ class CompanyAccRegisterView(APIView):
             return Response(response, status=status.HTTP_201_CREATED)
 
 
+class UserIdFindView(APIView):
+    serializer_class = CompanyRegistrationSerializer
+    permission_classes = (AllowAny,)
+    def Post(self, request):
+        pass ##여기서부터
+
+
 class DriverAccDetailView(APIView):
     def get(self, request, **kwargs):
         if request.user.role == 'u':
@@ -170,4 +196,54 @@ class CompanyAccDetailView(APIView):
                 return Response({"detail":"Not found."}, status=status.HTTP_404_NOT_FOUND)
         else:
             return Response({'detail':'Invalid Credentials.'}, status.HTTP_403_FORBIDDEN)
+
+
+class KingbusReviewView(APIView):
+    serializer_class = KingbusReviewSerializer
+
+    def get(self, request, **kwargs):
+        if not 'user_id' in kwargs:
+            return Response({"detail": "Method \"GET\" not allowed."},status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        user = get_object_or_404(User, id=kwargs['user_id'])
+        if user.role == 'u':
+            return page_not_found()
+        review = KingbusReview.objects.filter(driverorcompany=user).select_related('user').select_related('driverorcompany').select_related('dispatch')
+        if review:
+            serializer = self.serializer_class(review, many=True).data
+            return Response(serializer)
+        else:
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+    def post(self, request, **kwargs):
+        if kwargs:
+            return Response({"detail": "Method \"POST\" not allowed."},status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        user = request.user
+        if user.role == 'u':
+            dispatch = Dispatch.objects.select_related('user').select_related('selected_estimate__driverorcompany').select_related('kingbusreview').get(pk=request.data['dispatch'])
+            # print(dir(dispatch))
+            # print(dispatch.kingbusreview)
+            # print(dispatch.selected_estimate.driverorcompany)
+            if hasattr(dispatch, 'kingbusreview'):
+                if dispatch.kingbusreview:
+                    return Response({"detail":"Duplicated Request."}, status=status.HTTP_400_BAD_REQUEST)
+            elif hasattr(dispatch, 'selected_estimate'):
+                if dispatch.selected_estimate:
+                    if dispatch.user == user:
+                        serializer = self.serializer_class(data=request.data, context={
+                            "user":user,
+                            "driverorcompany":dispatch.selected_estimate.driverorcompany,
+                            "dispatch":dispatch
+                        })
+                        if serializer.is_valid(raise_exception=True):
+                            serializer.save()
+                            return Response(status=status.HTTP_201_CREATED)
+                    else:
+                        invalid_credentials()
+            #     else:
+            #         return page_not_found()
+            # else:
+            return page_not_found()
+        else:
+            return invalid_credentials()
 

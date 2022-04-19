@@ -13,8 +13,8 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'kingbuschat.settings')
 django.setup()
 # https://stdworkflow.com/38/daphne-django-core-exceptions-improperlyconfigured-requested-setting-installed-apps-but-settings
 
-# from channels.auth import AuthMiddlewareStack
-from .channelsmiddleware import TokenAuthMiddleware
+from channels.auth import AuthMiddlewareStack
+# from .channelsmiddleware import TokenAuthMiddleware
 from channels.routing import ProtocolTypeRouter, URLRouter
 
 from django.core.asgi import get_asgi_application
@@ -24,7 +24,8 @@ from chat import routing as chatrouting
 
 application = ProtocolTypeRouter({
     "http": get_asgi_application(),
-    "websocket": TokenAuthMiddleware(
+    # "websocket": TokenAuthMiddleware(AuthMiddlewareStack
+    "websocket": AuthMiddlewareStack(
         URLRouter(chatrouting.websocket_urlpatterns)
     )
 })

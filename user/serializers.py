@@ -1,9 +1,11 @@
+from rest_framework_simplejwt.serializers import TokenRefreshSerializer
 # from django.contrib.auth import authenticate
 from rest_framework import serializers
 from rest_framework_simplejwt.tokens import RefreshToken
+# from rest_framework_simplejwt.settings import api_settings
 
 # from django.conf import settings
-from .models import User, DriverAcc, CompanyAcc
+from .models import KingbusReview, User, DriverAcc, CompanyAcc
 
 
 class UserLoginSerializer(serializers.Serializer):
@@ -39,7 +41,7 @@ class UserLoginSerializer(serializers.Serializer):
     
         refresh = RefreshToken.for_user(user)
         refresh_token = str(refresh)
-        # refresh['id'] = user.id
+        # refresh['name'] = user.name
         access_token = str(refresh.access_token)
         
 
@@ -171,4 +173,24 @@ class CompanyDetailSerializer(serializers.ModelSerializer):
         exclude = ('user',)
     company_com_name = serializers.CharField(required=False)
     company_business_registration = serializers.ImageField(required=False)
+
+
+class KingbusReviewSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = KingbusReview
+        fields = '__all__'
+    user = serializers.CharField(required=False)
+    driverorcompany = serializers.CharField(required=False)
+    dispatch = serializers.CharField(required=False)
+    def validate(self, attrs):
+        return super().validate(attrs)
+    def create(self, validated_data):
+        instance = KingbusReview.objects.create(
+            user=self.context['user'],
+            driverorcompany=self.context['dispatch'].selected_estimate.driverorcompany,
+            dispatch=self.context['dispatch'],
+            content = validated_data['content'],
+            star = validated_data['star']
+        )
+        return instance
 

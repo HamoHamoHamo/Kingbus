@@ -28,7 +28,7 @@ urlpatterns = [
     path('', include(userurls)),
     path('', include(dispatchurls)),
     path('', include(communityurls)),
-    path('chat/', include(chaturls)),
+    path('', include(chaturls)),
 ]
 
 if DEBUG:

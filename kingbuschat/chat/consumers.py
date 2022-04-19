@@ -9,8 +9,9 @@ class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         self.room_name = self.scope['url_route']['kwargs']['room_name']
         self.room_group_name = 'chat_%s' % self.room_name
-        self.user = self.scope['user'].name
-        print(self.user)
+        # self.user = self.scope['user'].name
+        print(self.scope)
+        
 
         # Join room
         await self.channel_layer.group_add(
@@ -31,11 +32,14 @@ class ChatConsumer(AsyncWebsocketConsumer):
     async def receive(self, text_data):
         data = json.loads(text_data)
         message = data['message']
-        user = self.user
+        # user = self.user
+        user = data['user']
         # room = data['room']
         room = self.room_name
-
-        await self.save_message(user, room, message)
+        
+        # 생성시간 추가함
+        date = data['date']
+        await self.save_message(user, room, message, date)
 
         # Send message to room group
         await self.channel_layer.group_send(
@@ -43,7 +47,9 @@ class ChatConsumer(AsyncWebsocketConsumer):
             {
                 'type': 'chat_message',
                 'message': message,
-                'user': user
+                'user': user,
+                #date 추가
+                'date': date
             }
         )
 
@@ -51,13 +57,17 @@ class ChatConsumer(AsyncWebsocketConsumer):
     async def chat_message(self, event):
         message = event['message']
         user = event['user']
+        # date 추가
+        date = event['date']
 
         # Send message to WebSocket
         await self.send(text_data=json.dumps({
             'message':message,
-            'user':user
+            'user':user,
+            #date 추가
+            'date':date
         }))
 
     @sync_to_async
-    def save_message(self, username, room, message):
-        Message.objects.create(username=username, room=room, content=message)
+    def save_message(self, username, room, message, date):
+        Message.objects.create(username=username, room=room, content=message, date_added=date)

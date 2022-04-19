@@ -11,7 +11,8 @@ from rest_framework.response import Response
 # from rest_framework.pagination import PageNumberPagination
 
 from dispatch.models import Dispatch, DispatchEstimate, DispatchOrder
-from .serializers import DispatchEstimateListSerializer, DispatchListSerializer, DispatchSerializer, DispatchEstimateSerializer, DispatchOrderSerializer
+from user.serializers import CompanyProfileViewSerializer, DriverProfileViewSerializer
+from .serializers import DispatchEstimateDetailSerializer, DispatchEstimateListforDCSerializer, DispatchEstimateListforUserSerializer, DispatchListSerializer, DispatchSerializer, DispatchEstimateSerializer, DispatchOrderSerializer
 from dispatch import serializers #DispatchOrderDetailSerializer, 
 
 def invalid_credentials():
@@ -21,35 +22,25 @@ def page_not_found():
     return Response({"message": "Page Not Found."}, status=status.HTTP_404_NOT_FOUND)
 
 class DispatchOrderView(APIView):
-    serializer_class = DispatchOrderSerializer
-    # permission_classes = (AllowAny,)
 
-    # def decode_user_id(request):
-    #     user_id_decoded = jwt.decode(request.META['HTTP_AUTHORIZATION'].split(' ')[1], SIMPLE_JWT['SIGNING_KEY'], algorithms=["HS256"])['id']
-    #     return user_id_decoded
-    # == request.auth
-
-    def get(self, request, **kwargs):
-        if 'user_id' in kwargs:
-            return Response({"message": "Bad Request."}, status=status.HTTP_400_BAD_REQUEST)
+    def get(self, request):
+        # if 'user_id' in kwargs:
+        #     return Response({"message": "Bad Request."}, status=status.HTTP_400_BAD_REQUEST)
+        if request.user.role != 'u':
+            return invalid_credentials()
+        dispatch = Dispatch.objects.filter(user=request.user).select_related('order')
+        # order = DispatchOrder.objects.filter(dispatch__user=request.user).select_related('dispatch')
+        if dispatch:
+            return Response(DispatchListSerializer(dispatch, many=True).data, status=status.HTTP_200_OK)
         else:
-            if request.user.role != 'u':
-                return invalid_credentials()
-            # dispatch = Dispatch.objects.filter(user=request.user)
-            order = DispatchOrder.objects.filter(dispatch__user=request.user).select_related('dispatch')
-            if order:
-                return Response(self.serializer_class(order, many=True).data, status=status.HTTP_200_OK)
-            else:
-                return Response({"message": "No Contents"}, status=status.HTTP_204_NO_CONTENT)        
+            return Response({"message": "No Contents"}, status=status.HTTP_204_NO_CONTENT)        
 
-    def post(self, request, **kwargs):
-        try:
-            if kwargs['user_id']:
-                return Response({"message": "Bad Request."}, status=status.HTTP_400_BAD_REQUEST)
-        except:pass
+    def post(self, request):
+        # if 'user_id' in kwargs:
+        #     return Response({"message": "Bad Request."}, status=status.HTTP_400_BAD_REQUEST)
         if request.user.role != 'u':
             return invalid_credentials() #"detail": "You must be User to apply order!"
-        serializer = self.serializer_class(data=request.data, context={'requestuser':request.user})
+        serializer = DispatchOrderSerializer(data=request.data, context={'requestuser':request.user})
         if serializer.is_valid(raise_exception=True):
             serializer.save()
             response = {
@@ -116,49 +107,49 @@ class DispatchEstimateView(APIView):
         estimate = None
         if 'order_id' in kwargs:
             try:
-                estimate = DispatchEstimate.objects.filter(order=kwargs['order_id'], order__dispatch__dispatch_status__lt=2).select_related('order').select_related('driverorcompany')#.select_related('driverorcompany__profile')
-                print(estimate.first().order)
-                if estimate:
+                order = DispatchOrder.objects.select_related('dispatch').get(id=kwargs['order_id'])
+                estimate = DispatchEstimate.objects.filter(order=kwargs['order_id']).select_related('driverorcompany').select_related('driverorcompany__driveracc').select_related('driverorcompany__companyacc')
+                
                 # TODO https://docs.djangoproject.com/en/dev/ref/models/querysets/#exists
-                    if estimate.first().order.dispatch.user == request.user:
-                        return Response(DispatchEstimateListSerializer(instance=estimate, many=True).data)
-                    else:
-                        return invalid_credentials()
+                # if estimate.first().order.dispatch.user == request.user:
+                if order.dispatch.user == request.user:
+                    response = {
+                        "order":DispatchOrderSerializer(order).data,
+                        "estimate":DispatchEstimateListforUserSerializer(estimate, many=True).data
+                    }
+                    return Response(response)
                 else:
-                    return page_not_found()
+                    return invalid_credentials()
             except:
-                return Response({"message": "No Contents"}, status=status.HTTP_204_NO_CONTENT)
+                return page_not_found()
         elif not kwargs:
         # if 'user_id' in kwargs:
-            if request.user.role != 'u':
-                estimate = DispatchEstimate.objects.filter(driverorcompany=request.user).select_related('order')
-                # TODO https://daeguowl.tistory.com/171
-                # TODO 배차진행상태로 나눠서 API호출할지?(4단계로)
-                # TODO !!!중요!!! 배차에 관한 대부분의 정보를 담는 페이지들은 모두 dispatchdetailview로 옮길것. 그리고 모든 정보를 포함해 한번에 보여줄것. 예시) /estimate/list/u , /order/list/ 등
-                # if estimate.first().driverorcompany != request.user:
-                #     return invalid_credentials()
-                serializer = DispatchEstimateListSerializer(instance=estimate, many=True).data
-                if serializer:
-                    return Response(serializer)
+            response = {}
+            role = request.user.role
+            try:
+                if role == 'd' or role == 'c':
+                    estimate = DispatchEstimate.objects.filter(driverorcompany=request.user).select_related('order').select_related('order__dispatch')
+                    if role == 'd':
+                        response['profile'] = DriverProfileViewSerializer(request.user).data
+                    else: # TODO 이거 프론트보고 따로 호출하게 할지 아니면 한꺼번에 같이 뱉을지 결정 ex:(order/{order_id})
+                        response['profile'] = CompanyProfileViewSerializer(request.user).data
+                    response['estimates'] = DispatchEstimateListforDCSerializer(estimate, many=True).data
+                    return Response(response)
                 else:
-                    return Response({"message": "No Contents"}, status=status.HTTP_204_NO_CONTENT)
-            else:
-                return invalid_credentials()
+                    return invalid_credentials()
+            except:
+                return page_not_found()
         else:
             return Response({"detail": "Method \"GET\" not allowed."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def post(self, request, **kwargs):
-        # print(request.user.role)
         if kwargs:
             return Response({"detail": "Method \"POST\" not allowed."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
-        if request.user.role != 'c' and not 'd':
+        if request.user.role != 'c' and request.user.role != 'd':
             return invalid_credentials()
+        # order = get_object_or_404(DispatchOrder, id=request.data['order'])
         try:
-            order = DispatchOrder.objects.get(id=request.data['order'])
-        except:
-            return Response({"message": "Bad request", "detail": "Order argument not given or invalid."}, status=status.HTTP_400_BAD_REQUEST)
-        try:
-            estimate = DispatchEstimate.objects.filter(order=order, driverorcompany=request.user)
+            estimate = DispatchEstimate.objects.get(order__id=request.data['order'], driverorcompany=request.user)
         except:
             estimate = None
         finally:
@@ -184,14 +175,16 @@ class DispatchEstimateDetailView(APIView):
     serializer_class = DispatchEstimateSerializer
 
     def get(self, request, **kwargs):
-        try:
-            if kwargs['estimate_id']:
-                estimate = DispatchEstimate.objects.get(id=kwargs['estimate_id'])
-        except:
+        if 'estimate_id' in kwargs:
+            # try:
+            estimate = DispatchEstimate.objects.select_related('order').select_related('order__dispatch').select_related('driverorcompany').select_related('driverorcompany__driveracc').select_related('driverorcompany__companyacc').prefetch_related('driverorcompany__review_driverorcompany').get(id=kwargs['estimate_id'])
+            # except:
+            #     return page_not_found()
+            if estimate.order.dispatch.user != request.user:
+                return invalid_credentials()
+        else:
             return page_not_found()
-        if estimate.driverorcompany != request.user:
-            return invalid_credentials()
-        return Response(self.serializer_class(instance=estimate).data)
+        return Response(DispatchEstimateDetailSerializer(estimate).data)
 
     def patch(self, request, **kwargs):
         try:
@@ -279,7 +272,7 @@ class DispatchListView(APIView):
             return invalid_credentials()
         date = str(timezone.localdate())
         print(date)
-        dispatch = Dispatch.objects.filter(order__departure_date__gte=date, dispatch_status__lt=2).order_by('-pk')#https://gaussian37.github.io/python-django-django-query-set/
+        dispatch = Dispatch.objects.filter(order__departure_date__gte=date, dispatch_status=1).select_related('order').order_by('-pk')#https://gaussian37.github.io/python-django-django-query-set/
         paginator = api_settings.DEFAULT_PAGINATION_CLASS()
         result_page = paginator.paginate_queryset(dispatch, request)
         serializer = DispatchListSerializer(result_page, many=True, context={'request':request})

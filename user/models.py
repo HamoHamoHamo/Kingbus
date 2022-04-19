@@ -89,6 +89,13 @@ class User(AbstractBaseUser):
         return self.username
 
 
+# signal/receiver on model creation
+def create_profile_model(sender, instance, created, **kwargs):
+    """Create ModelB for every new ModelA."""
+    if created:
+        Profile.objects.create(user=instance, nickname=instance.username)
+
+models.signals.post_save.connect(create_profile_model, sender=User,weak=False, dispatch_uid='models.create_profile_model')
 
 
 class DriverAcc(models.Model): # TODO 기사,회사프로필사진 / 차량다진 다중업로드
@@ -180,10 +187,10 @@ class CompanyAcc(models.Model):
     # filesavefield = 'companyacc'
 
 
-# signal/receiver on model creation
-def create_profile_model(sender, instance, created, **kwargs):
-    """Create ModelB for every new ModelA."""
-    if created:
-        Profile.objects.create(user=instance, nickname=instance.username)
-
-models.signals.post_save.connect(create_profile_model, sender=User,weak=False, dispatch_uid='models.create_profile_model')
+class KingbusReview(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='review_user')
+    driverorcompany = models.ForeignKey(User, on_delete=models.CASCADE, related_name='review_driverorcompany')
+    dispatch = models.OneToOneField('dispatch.Dispatch', on_delete=models.CASCADE)
+    content = models.TextField(null=True, blank=True)
+    star = models.CharField(max_length=3)
+    date = models.DateTimeField(auto_now_add=True)
