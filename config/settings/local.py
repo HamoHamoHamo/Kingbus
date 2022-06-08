@@ -9,7 +9,7 @@ CORS_ALLOW_CREDENTIALS = True
 
 # MIDDLEWARE += ('config.middlewares.QueryCountDebugMiddleware',)
 
-
+# sql 로그
 l = logging.getLogger('django.bd.backends')
 l.setLevel(logging.DEBUG)
 l.addHandler(logging.StreamHandler())
